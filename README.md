@@ -15,6 +15,7 @@ A Q&A backend API inspired by Quora, built with Express and PostgreSQL.
 - [Prerequisites](#prerequisites)
 - [Installation & Run](#installation--run)
 - [How to Use the API (Postman)](#how-to-use-the-api-postman)
+- [API Documentation (Swagger)](#api-documentation-swagger)
 - [Database](#database)
 - [Credits](#credits)
 - [License](#license)
@@ -30,6 +31,8 @@ This project is a backend API that allows users to:
 - Search questions by title or category
 - Post answers under a question (max 300 characters)
 - View and delete answers for a question
+- Vote Agree (+1) / Disagree (-1) on questions and answers
+- Browse interactive API docs with Swagger UI
 
 ### Why these technologies?
 
@@ -44,12 +47,13 @@ This project is a backend API that allows users to:
 
 - Questions CRUD + Search
 - Answers: create / list / delete all answers for a question
+- Votes for questions and answers (`question_votes`, `answer_votes`)
 - Centralized error handling middleware
+- Swagger UI at `/api-docs`
 - Deleting a question also deletes related answers (`ON DELETE CASCADE`)
 
 ### Future plans (not implemented yet)
 
-- Voting for questions/answers (`question_votes`, `answer_votes`)
 - Authentication (login / register)
 - Move validation into middleware between the path and the handler
 
@@ -59,10 +63,14 @@ This project is a backend API that allows users to:
 
 ```
 backend-skill-checkpoint-express-server/
-├── app.mjs                      # Server entry point: routers + middleware
+├── app.mjs                      # Server entry point: routers + middleware + Swagger
 ├── package.json                 # Dependencies and npm scripts
+├── schema.sql                   # DB tables + ON DELETE CASCADE foreign keys
+├── apply-schema.mjs             # Applies schema.sql to PostgreSQL
+├── swagger.json                 # OpenAPI spec for Swagger UI
 ├── routes/
-│   └── questionRouter.mjs       # Questions and answers APIs
+│   ├── questionRouter.mjs       # Questions, answers under questions, question votes
+│   └── answerRouter.mjs         # Answer votes
 ├── middlewares/
 │   └── errorHandler.mjs         # HttpError, notFoundHandler, errorHandler
 └── utils/
@@ -76,7 +84,7 @@ backend-skill-checkpoint-express-server/
 1. [Node.js](https://nodejs.org/) (v18+ recommended)
 2. [PostgreSQL](https://www.postgresql.org/) with a database named `quora_mock`
 3. [Postman](https://www.postman.com/) for API testing
-4. Database tables from the ERD: `questions`, `answers`, `question_votes`, `answer_votes`
+4. Run `npm run db:schema` once so tables / `ON DELETE CASCADE` FKs are applied (`questions`, `answers`, `question_votes`, `answer_votes`)
 
 ---
 
@@ -102,7 +110,15 @@ Example used in this project:
 connectionString: "postgresql://postgres:141559@localhost:5432/quora_mock";
 ```
 
-### 3) Start the server
+### 3) Apply the database schema
+
+```bash
+npm run db:schema
+```
+
+This creates the tables (if needed) and ensures foreign keys use `ON DELETE CASCADE`.
+
+### 4) Start the server
 
 ```bash
 npm start
@@ -165,40 +181,68 @@ In Postman, when sending a body: Body → **raw** → **JSON**
 }
 ```
 
+### Votes
+
+| Method | URL | Body |
+|--------|-----|------|
+| `POST` | `/questions/:questionId/vote` | `{ "vote": 1 }` or `{ "vote": -1 }` |
+| `POST` | `/answers/:answerId/vote` | `{ "vote": 1 }` or `{ "vote": -1 }` |
+
+- `1` = Agree  
+- `-1` = Disagree  
+
 ### Recommended testing order for beginners
 
 1. `POST /questions` → create a question
 2. `GET /questions` → note the returned `id`
 3. Replace `:questionId` in URLs with that `id`
 4. Test GET by id → PUT → search
-5. `POST` answer → `GET` answers → `DELETE` answers
-6. `DELETE` question (related answers are removed via CASCADE if any remain)
+5. `POST` answer → `GET` answers
+6. Vote question / vote answer
+7. `DELETE` answers → `DELETE` question (related answers are removed via CASCADE if any remain)
+
+---
+
+## API Documentation (Swagger)
+
+After starting the server, open:
+
+```text
+http://localhost:4000/api-docs
+```
+
+This page is powered by [`swagger-ui-express`](https://github.com/scottie1984/swagger-ui-express) and the `swagger.json` file.  
+You can try endpoints directly in the browser (similar to Postman).
 
 ---
 
 ## Database
 
+Schema is defined in `schema.sql` (apply with `npm run db:schema`).
+
 Main tables used by the current API:
 
-| Table       | Purpose                                         |
-| ----------- | ----------------------------------------------- |
+| Table | Purpose |
+|-------|---------|
 | `questions` | Stores questions (title, description, category) |
-| `answers`   | Stores answers linked by `question_id`          |
+| `answers` | Stores answers linked by `question_id` |
+| `question_votes` | Stores votes for questions (`vote`: 1 or -1) |
+| `answer_votes` | Stores votes for answers (`vote`: 1 or -1) |
 
 Key relationships:
 
 - One question can have many answers
-- Deleting a question also deletes its answers (`ON DELETE CASCADE`)
-
-`question_votes` and `answer_votes` exist in the ERD but have no API endpoints in this version.
+- One question / answer can have many votes
+- Deleting a question also deletes its answers and question votes (`ON DELETE CASCADE`)
+- Deleting an answer also deletes its answer votes (`ON DELETE CASCADE`)
 
 ---
 
 ## Credits
 
 - Built as part of a Backend Skill Checkpoint
-- Main stack: [Express](https://expressjs.com/), [PostgreSQL](https://www.postgresql.org/), [node-postgres (pg)](https://node-postgres.com/)
-- References: Express Routing, PostgreSQL Foreign Keys / CASCADE
+- Main stack: [Express](https://expressjs.com/), [PostgreSQL](https://www.postgresql.org/), [node-postgres (pg)](https://node-postgres.com/), [swagger-ui-express](https://github.com/scottie1984/swagger-ui-express)
+- References: Express Routing, PostgreSQL Foreign Keys / CASCADE, OpenAPI / Swagger
 
 ---
 
@@ -230,6 +274,7 @@ API สำหรับเว็บตั้งคำถาม–หาคำต�
 - [สิ่งที่ต้องมีก่อนเริ่ม](#สิ่งที่ต้องมีก่อนเริ่ม)
 - [วิธีติดตั้งและรัน](#วิธีติดตั้งและรัน)
 - [วิธีใช้งาน API (Postman)](#วิธีใช้งาน-api-postman)
+- [เอกสาร API (Swagger)](#เอกสาร-api-swagger)
 - [ฐานข้อมูล](#ฐานข้อมูล)
 - [เครดิต](#เครดิต)
 - [สิทธิ์การใช้งาน](#สิทธิ์การใช้งาน)
@@ -244,6 +289,8 @@ API สำหรับเว็บตั้งคำถาม–หาคำต�
 - ค้นหาคำถามจากชื่อเรื่องหรือหมวดหมู่
 - โพสต์คำตอบใต้คำถาม (ยาวไม่เกิน 300 ตัวอักษร)
 - ดูและลบคำตอบของคำถามนั้น
+- โหวต Agree (+1) / Disagree (-1) ให้คำถามและคำตอบ
+- ดูเอกสาร API แบบ interactive ด้วย Swagger UI
 
 ### ทำไมเลือกเทคโนโลยีเหล่านี้
 
@@ -258,12 +305,13 @@ API สำหรับเว็บตั้งคำถาม–หาคำต�
 
 - Questions CRUD + Search
 - Answers สร้าง / ดู / ลบทั้งหมดของคำถามหนึ่งข้อ
+- โหวตคำถามและคำตอบ (`question_votes`, `answer_votes`)
 - Error handling ผ่าน middleware กลาง
+- Swagger UI ที่ `/api-docs`
 - เมื่อลบคำถาม คำตอบที่ผูกไว้จะถูกลบตาม (ON DELETE CASCADE)
 
 ### แผนในอนาคต (ยังไม่ได้ทำ)
 
-- ระบบโหวตคำถาม/คำตอบ (`question_votes`, `answer_votes`)
 - Authentication (login / สมัครสมาชิก)
 - แยก validation เป็น middleware คั่นกลางระหว่าง path กับ handler
 
@@ -273,10 +321,14 @@ API สำหรับเว็บตั้งคำถาม–หาคำต�
 
 ```
 backend-skill-checkpoint-express-server/
-├── app.mjs                      # จุดเริ่มต้นเซิร์ฟเวอร์ ต่อ router + middleware
+├── app.mjs                      # จุดเริ่มต้นเซิร์ฟเวอร์ + router + Swagger
 ├── package.json                 # รายการ dependencies และสคริปต์รันโปรเจกต์
+├── schema.sql                   # ตาราง DB + Foreign Key ON DELETE CASCADE
+├── apply-schema.mjs             # สคริปต์รัน schema.sql ลง PostgreSQL
+├── swagger.json                 # สเปก OpenAPI สำหรับ Swagger UI
 ├── routes/
-│   └── questionRouter.mjs       # API ของ questions และ answers
+│   ├── questionRouter.mjs       # คำถาม, คำตอบใต้คำถาม, โหวตคำถาม
+│   └── answerRouter.mjs         # โหวตคำตอบ
 ├── middlewares/
 │   └── errorHandler.mjs         # HttpError, notFoundHandler, errorHandler
 └── utils/
@@ -290,7 +342,7 @@ backend-skill-checkpoint-express-server/
 1. [Node.js](https://nodejs.org/) (แนะนำเวอร์ชัน 18 ขึ้นไป)
 2. [PostgreSQL](https://www.postgresql.org/) พร้อม database ชื่อ `quora_mock`
 3. [Postman](https://www.postman.com/) สำหรับทดสอบ API
-4. ตารางใน database ตาม ERD: `questions`, `answers`, `question_votes`, `answer_votes`
+4. รัน `npm run db:schema` หนึ่งครั้งเพื่อสร้างตาราง / ตั้ง `ON DELETE CASCADE` (`questions`, `answers`, `question_votes`, `answer_votes`)
 
 ---
 
@@ -316,7 +368,15 @@ postgresql://USERNAME:PASSWORD@localhost:5432/quora_mock
 connectionString: "postgresql://postgres:141559@localhost:5432/quora_mock";
 ```
 
-### 3) รันเซิร์ฟเวอร์
+### 3) รัน schema ของฐานข้อมูล
+
+```bash
+npm run db:schema
+```
+
+คำสั่งนี้จะสร้างตาราง (ถ้ายังไม่มี) และตั้ง Foreign Key เป็น `ON DELETE CASCADE`
+
+### 4) รันเซิร์ฟเวอร์
 
 ```bash
 npm start
@@ -379,40 +439,68 @@ Base URL: `http://localhost:4000`
 }
 ```
 
+### Votes (โหวต)
+
+| Method | URL | Body |
+|--------|-----|------|
+| `POST` | `/questions/:questionId/vote` | `{ "vote": 1 }` หรือ `{ "vote": -1 }` |
+| `POST` | `/answers/:answerId/vote` | `{ "vote": 1 }` หรือ `{ "vote": -1 }` |
+
+- `1` = เห็นด้วย (Agree)  
+- `-1` = ไม่เห็นด้วย (Disagree)  
+
 ### ลำดับทดสอบที่แนะนำสำหรับมือใหม่
 
 1. `POST /questions` → สร้างคำถาม
 2. `GET /questions` → ดู `id` ที่ได้
 3. เอา `id` ไปใส่ใน URL แทน `:questionId`
 4. เทส GET ตาม id → PUT → search
-5. `POST` คำตอบ → `GET` คำตอบ → `DELETE` คำตอบ
-6. `DELETE` คำถาม (คำตอบจะถูกลบตามด้วยถ้ายังเหลือ)
+5. `POST` คำตอบ → `GET` คำตอบ
+6. โหวตคำถาม / โหวตคำตอบ
+7. `DELETE` คำตอบ → `DELETE` คำถาม (คำตอบจะถูกลบตามด้วยถ้ายังเหลือ)
+
+---
+
+## เอกสาร API (Swagger)
+
+หลังรันเซิร์ฟเวอร์แล้ว เปิดเบราว์เซอร์ไปที่:
+
+```text
+http://localhost:4000/api-docs
+```
+
+หน้านี้ใช้แพ็กเกจ [`swagger-ui-express`](https://github.com/scottie1984/swagger-ui-express) ร่วมกับไฟล์ `swagger.json`  
+ลองเรียก API ได้เลยจากหน้าเว็บ (คล้าย Postman)
 
 ---
 
 ## ฐานข้อมูล
 
+กำหนด schema ไว้ใน `schema.sql` (รันด้วย `npm run db:schema`)
+
 ตารางหลักที่ใช้ใน API ตอนนี้:
 
-| ตาราง       | หน้าที่                                  |
-| ----------- | ---------------------------------------- |
+| ตาราง | หน้าที่ |
+|-------|---------|
 | `questions` | เก็บคำถาม (title, description, category) |
-| `answers`   | เก็บคำตอบ ผูกกับ `question_id`           |
+| `answers` | เก็บคำตอบ ผูกกับ `question_id` |
+| `question_votes` | เก็บโหวตของคำถาม (`vote`: 1 หรือ -1) |
+| `answer_votes` | เก็บโหวตของคำตอบ (`vote`: 1 หรือ -1) |
 
 ความสัมพันธ์สำคัญ:
 
 - คำถาม 1 ข้อ มีคำตอบได้หลายข้อ
-- ลบคำถามแล้ว คำตอบที่ผูกไว้ถูกลบตาม (`ON DELETE CASCADE`)
-
-ตาราง `question_votes` และ `answer_votes` มีใน ERD แล้ว แต่ยังไม่มี API ในรอบนี้
+- คำถาม / คำตอบ 1 ข้อ มีโหวตได้หลายครั้ง
+- ลบคำถามแล้ว คำตอบและโหวตคำถามถูกลบตาม (`ON DELETE CASCADE`)
+- ลบคำตอบแล้ว โหวตคำตอบถูกลบตาม (`ON DELETE CASCADE`)
 
 ---
 
 ## เครดิต
 
 - พัฒนาเป็นส่วนหนึ่งของ Backend Skill Checkpoint
-- เทคโนโลยีหลัก: [Express](https://expressjs.com/), [PostgreSQL](https://www.postgresql.org/), [node-postgres (pg)](https://node-postgres.com/)
-- เอกสารอ้างอิง: Express Routing, PostgreSQL Foreign Keys / CASCADE
+- เทคโนโลยีหลัก: [Express](https://expressjs.com/), [PostgreSQL](https://www.postgresql.org/), [node-postgres (pg)](https://node-postgres.com/), [swagger-ui-express](https://github.com/scottie1984/swagger-ui-express)
+- เอกสารอ้างอิง: Express Routing, PostgreSQL Foreign Keys / CASCADE, OpenAPI / Swagger
 
 ---
 

@@ -1,0 +1,605 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "title": "Quora-like API",
+    "description": "Q&A backend API inspired by Quora — questions, answers, and votes.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "http://localhost:4000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    { "name": "Questions", "description": "Question CRUD and search" },
+    { "name": "Answers", "description": "Answers under a question" },
+    { "name": "Votes", "description": "Agree (+1) / Disagree (-1)" }
+  ],
+  "paths": {
+    "/questions": {
+      "get": {
+        "tags": ["Questions"],
+        "summary": "Get all questions",
+        "responses": {
+          "200": {
+            "description": "List of questions",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Question" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to fetch questions." }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Questions"],
+        "summary": "Create a question",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QuestionInput" },
+              "example": {
+                "title": "Is Thailand a good place to travel?",
+                "description": "Which province should I visit first?",
+                "category": "Travel"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question created successfully." }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "example": { "message": "Invalid request data." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to create question." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/questions/search": {
+      "get": {
+        "tags": ["Questions"],
+        "summary": "Search questions by title and/or category",
+        "parameters": [
+          {
+            "name": "title",
+            "in": "query",
+            "schema": { "type": "string" },
+            "example": "thai"
+          },
+          {
+            "name": "category",
+            "in": "query",
+            "schema": { "type": "string" },
+            "example": "Travel"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Question" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing search params",
+            "content": {
+              "application/json": {
+                "example": { "message": "Invalid search parameters." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to fetch a question." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/questions/{questionId}": {
+      "get": {
+        "tags": ["Questions"],
+        "summary": "Get a question by ID",
+        "parameters": [
+          { "$ref": "#/components/parameters/QuestionId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Question found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": { "$ref": "#/components/schemas/Question" }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question not found." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to fetch questions." }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": ["Questions"],
+        "summary": "Update a question by ID",
+        "parameters": [
+          { "$ref": "#/components/parameters/QuestionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/QuestionInput" }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question updated successfully." }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body",
+            "content": {
+              "application/json": {
+                "example": { "message": "Invalid request data." }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question not found." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to update question." }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Questions"],
+        "summary": "Delete a question by ID",
+        "parameters": [
+          { "$ref": "#/components/parameters/QuestionId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Question post has been deleted successfully."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question not found." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to delete question." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/questions/{questionId}/answers": {
+      "get": {
+        "tags": ["Answers"],
+        "summary": "Get answers for a question",
+        "parameters": [
+          { "$ref": "#/components/parameters/QuestionId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of answers",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Answer" }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Question not found",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question not found." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to fetch answers." }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Answers"],
+        "summary": "Create an answer for a question",
+        "parameters": [
+          { "$ref": "#/components/parameters/QuestionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/AnswerInput" },
+              "example": {
+                "content": "Absolutely — especially Chiang Mai and Phuket."
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": {
+              "application/json": {
+                "example": { "message": "Answer created successfully." }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid body (empty or over 300 chars)",
+            "content": {
+              "application/json": {
+                "example": { "message": "Invalid request data." }
+              }
+            }
+          },
+          "404": {
+            "description": "Question not found",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question not found." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to create answers." }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": ["Answers"],
+        "summary": "Delete all answers for a question",
+        "parameters": [
+          { "$ref": "#/components/parameters/QuestionId" }
+        ],
+        "responses": {
+          "200": {
+            "description": "Deleted",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "All answers for the question have been deleted successfully."
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Question not found",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question not found." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to delete answers." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/questions/{questionId}/vote": {
+      "post": {
+        "tags": ["Votes"],
+        "summary": "Vote on a question (Agree / Disagree)",
+        "parameters": [
+          { "$ref": "#/components/parameters/QuestionId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VoteInput" },
+              "examples": {
+                "agree": {
+                  "summary": "Agree",
+                  "value": { "vote": 1 }
+                },
+                "disagree": {
+                  "summary": "Disagree",
+                  "value": { "vote": -1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vote recorded",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Vote on the question has been recorded successfully."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid vote (must be 1 or -1)",
+            "content": {
+              "application/json": {
+                "example": { "message": "Invalid vote value." }
+              }
+            }
+          },
+          "404": {
+            "description": "Question not found",
+            "content": {
+              "application/json": {
+                "example": { "message": "Question not found." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to vote question." }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/answers/{answerId}/vote": {
+      "post": {
+        "tags": ["Votes"],
+        "summary": "Vote on an answer (Agree / Disagree)",
+        "parameters": [
+          { "$ref": "#/components/parameters/AnswerId" }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "$ref": "#/components/schemas/VoteInput" },
+              "examples": {
+                "agree": {
+                  "summary": "Agree",
+                  "value": { "vote": 1 }
+                },
+                "disagree": {
+                  "summary": "Disagree",
+                  "value": { "vote": -1 }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Vote recorded",
+            "content": {
+              "application/json": {
+                "example": {
+                  "message": "Vote on the answer has been recorded successfully."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid vote (must be 1 or -1)",
+            "content": {
+              "application/json": {
+                "example": { "message": "Invalid vote value." }
+              }
+            }
+          },
+          "404": {
+            "description": "Answer not found",
+            "content": {
+              "application/json": {
+                "example": { "message": "Answer not found." }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "example": { "message": "Unable to vote answer." }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "QuestionId": {
+        "name": "questionId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" },
+        "example": 1
+      },
+      "AnswerId": {
+        "name": "answerId",
+        "in": "path",
+        "required": true,
+        "schema": { "type": "integer" },
+        "example": 1
+      }
+    },
+    "schemas": {
+      "Question": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "title": {
+            "type": "string",
+            "example": "Is Thailand a good place to travel?"
+          },
+          "description": {
+            "type": "string",
+            "example": "Which province should I visit first?"
+          },
+          "category": { "type": "string", "example": "Travel" }
+        }
+      },
+      "QuestionInput": {
+        "type": "object",
+        "required": ["title", "description", "category"],
+        "properties": {
+          "title": { "type": "string" },
+          "description": { "type": "string" },
+          "category": { "type": "string" }
+        }
+      },
+      "Answer": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "integer", "example": 1 },
+          "content": {
+            "type": "string",
+            "example": "Absolutely — especially Chiang Mai and Phuket."
+          }
+        }
+      },
+      "AnswerInput": {
+        "type": "object",
+        "required": ["content"],
+        "properties": {
+          "content": {
+            "type": "string",
+            "maxLength": 300
+          }
+        }
+      },
+      "VoteInput": {
+        "type": "object",
+        "required": ["vote"],
+        "properties": {
+          "vote": {
+            "type": "integer",
+            "enum": [1, -1],
+            "description": "1 = Agree, -1 = Disagree"
+          }
+        }
+      }
+    }
+  }
+}
